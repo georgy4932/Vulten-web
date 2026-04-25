@@ -1106,18 +1106,59 @@
       }
     }
 
+    var SUPABASE_URL = 'https://imgqvlkkwhrqthpknmnk.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltZ3F2bGtrd2hycXRocGtubW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTYzNTYsImV4cCI6MjA5MjY5MjM1Nn0._KbX440rWKvkgCUg36aiB0BhmXyBJZMaoMmC-AoNy28';
+
     function handleSubmit() {
       var emailInput = document.getElementById('emailInput');
+      var submitBtn = document.querySelector('#modalForm .btn-primary');
       var email = emailInput.value.trim();
       var isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
       if (!isValidEmail) {
         emailInput.style.borderColor = '#c0392b';
         return;
       }
+
       emailInput.style.borderColor = '';
-      document.getElementById('modalForm').style.display = 'none';
-      document.getElementById('successMsg').style.display = 'block';
-      setTimeout(closeModal, 3200);
+      submitBtn.textContent = 'Saving...';
+      submitBtn.disabled = true;
+
+      fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ email: email })
+      })
+      .then(function (res) {
+        submitBtn.textContent = 'Join the Waitlist';
+        submitBtn.disabled = false;
+
+        if (res.status === 201) {
+          document.getElementById('modalForm').style.display = 'none';
+          document.getElementById('successMsg').style.display = 'block';
+          setTimeout(closeModal, 3200);
+        } else if (res.status === 409) {
+          emailInput.style.borderColor = '#c0392b';
+          emailInput.placeholder = 'Already on the list!';
+          emailInput.value = '';
+        } else {
+          emailInput.style.borderColor = '#c0392b';
+          emailInput.placeholder = 'Something went wrong. Try again.';
+          emailInput.value = '';
+        }
+      })
+      .catch(function () {
+        submitBtn.textContent = 'Join the Waitlist';
+        submitBtn.disabled = false;
+        emailInput.style.borderColor = '#c0392b';
+        emailInput.placeholder = 'Connection error. Try again.';
+        emailInput.value = '';
+      });
     }
 
     document.addEventListener('keydown', function (e) {
